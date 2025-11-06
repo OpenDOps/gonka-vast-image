@@ -1,8 +1,8 @@
 FROM ghcr.io/product-science/mlnode:3.0.10
 
-# Install nginx, wireguard and related tools
+# Install nginx and wireguard userspace tools (without resolvconf)
 RUN apt update && \
-    apt install -y nginx wireguard wireguard-tools iptables resolvconf ufw && \
+    apt install -y --no-install-recommends nginx wireguard-tools iptables ufw && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
