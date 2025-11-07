@@ -45,15 +45,15 @@ jobs:
           case "$selection" in
             mlnode)
               echo "build_mlnode=true" >> "$GITHUB_OUTPUT"
-              echo "build_alpine=false" >> "$GITHUB_OUTPUT"
+              echo "build_ubuntu=false" >> "$GITHUB_OUTPUT"
               ;;
-            alpine)
+            ubuntu)
               echo "build_mlnode=false" >> "$GITHUB_OUTPUT"
-              echo "build_alpine=true" >> "$GITHUB_OUTPUT"
+              echo "build_ubuntu=true" >> "$GITHUB_OUTPUT"
               ;;
             *)
               echo "build_mlnode=true" >> "$GITHUB_OUTPUT"
-              echo "build_alpine=true" >> "$GITHUB_OUTPUT"
+              echo "build_ubuntu=true" >> "$GITHUB_OUTPUT"
               ;;
           esac
 
