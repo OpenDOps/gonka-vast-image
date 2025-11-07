@@ -43,41 +43,15 @@ server_addr = ${FRP_SERVER_IP}
 server_port = ${FRP_SERVER_PORT}
 token = ${SECRET_FRP_TOKEN}
 
-[client-web]
+[client-mlnode1]
 type = tcp
 local_ip = 127.0.0.1
 local_port = 5000
 remote_port = 15000
 EOF
 
-    echo "Creating systemd unit /etc/systemd/system/frpc.service..."
-    cat > /etc/systemd/system/frpc.service <<'EOF'
-[Unit]
-Description=Frp Client Service
-After=network.target
-
-[Service]
-Type=simple
-User=nobody
-Restart=on-failure
-RestartSec=5s
-ExecStart=/usr/bin/frpc -c /etc/frp/frpc.ini
-ExecReload=/usr/bin/frpc reload -c /etc/frp/frpc.ini
-LimitNOFILE=1048576
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-    if command -v systemctl >/dev/null 2>&1; then
-        echo "Starting FRP client service via systemd..."
-        systemctl daemon-reload
-        systemctl enable frpc
-        systemctl restart frpc
-    else
-        echo "systemctl not found; starting frpc in background..."
-        /usr/bin/frpc -c /etc/frp/frpc.ini &
-    fi
+    echo "Starting frpc in background..."
+    /usr/bin/frpc -c /etc/frp/frpc.ini &
 fi
 
 # Start nginx in background
@@ -90,7 +64,7 @@ sleep 1
 # Start the appropriate service based on UBUNTU_TEST flag
 if [ "${UBUNTU_TEST}" = "true" ]; then
     echo "UBUNTU_TEST is true; starting test HTTP server..."
-    exec python3 /http_server.py --port 8080
+    exec python3 /http_server.py --port 5000
 else
     echo "Starting uvicorn application..."
     exec uvicorn api.app:app --host=0.0.0.0 --port=8080
