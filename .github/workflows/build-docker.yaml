@@ -39,9 +39,9 @@ jobs:
       - name: Determine build targets
         id: targets
         env:
-          SELECTION: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.image_target || 'both' }}
+          SELECTION: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.image_target || 'ubuntu' }}
         run: |
-          selection="${SELECTION:-both}"
+          selection="${SELECTION:-ubuntu}"
           case "$selection" in
             mlnode)
               echo "build_mlnode=true" >> "$GITHUB_OUTPUT"
