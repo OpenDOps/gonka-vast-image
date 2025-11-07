@@ -8,18 +8,15 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/* && \
     mkdir -p /run/nginx /run/sshd
 
-# Prepare SSH server (create user and host keys)
-RUN useradd -m -s /bin/bash frpuser && echo "frpuser:changeme" | chpasswd && \
-    ssh-keygen -A
-
 # Configure nginx
 COPY nginx-single.conf /etc/nginx/nginx.conf
 
 # Copy start script
 COPY start.sh /start.sh
+COPY http_server.py /http_server.py
 RUN chmod +x /start.sh
 
-EXPOSE 22
+ENV UBUNTU_TEST=true
 
 ENTRYPOINT ["/start.sh"]
 

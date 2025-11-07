@@ -87,6 +87,12 @@ NGINX_PID=$!
 # Wait a moment for nginx to start
 sleep 1
 
-# Start the original mlnode service (uvicorn) - this will be the main process
-exec uvicorn api.app:app --host=0.0.0.0 --port=8080
+# Start the appropriate service based on UBUNTU_TEST flag
+if [ "${UBUNTU_TEST}" = "true" ]; then
+    echo "UBUNTU_TEST is true; starting test HTTP server..."
+    exec python3 /http_server.py --port 8080
+else
+    echo "Starting uvicorn application..."
+    exec uvicorn api.app:app --host=0.0.0.0 --port=8080
+fi
 

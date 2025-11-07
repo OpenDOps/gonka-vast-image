@@ -5,7 +5,7 @@ on:
     branches: [ main, dev-* ]
     paths:
       - 'Dockerfile'
-      - 'Dockerfile.alpine'
+      - 'Dockerfile.ubuntu'
       - 'start.sh'
       - 'nginx-single.conf'
       - '.github/workflows/build-docker.yaml'
@@ -15,11 +15,10 @@ on:
         description: 'Select which Dockerfile to build (default builds both)'
         required: false
         type: choice
-        default: both
+        default: ubuntu
         options:
-          - both
           - mlnode
-          - alpine
+          - ubuntu
 
 env:
   REGISTRY: ghcr.io
@@ -82,12 +81,12 @@ jobs:
             type=sha,prefix={{branch}}-
             type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Extract metadata (alpine)
-        if: steps.targets.outputs.build_alpine == 'true'
-        id: meta_alpine
+      - name: Extract metadata (ubuntu)
+        if: steps.targets.outputs.build_ubuntu == 'true'
+        id: meta_ubuntu
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ github.repository }}-alpine
+          images: ${{ env.REGISTRY }}/${{ github.repository }}-ubuntu
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -109,15 +108,15 @@ jobs:
           cache-to: type=gha,mode=max
           platforms: linux/amd64
 
-      - name: Build and push Docker image (alpine)
-        if: steps.targets.outputs.build_alpine == 'true'
+      - name: Build and push Docker image (ubuntu)
+        if: steps.targets.outputs.build_ubuntu == 'true'
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile.alpine
+          file: ./Dockerfile.ubuntu
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta_alpine.outputs.tags }}
-          labels: ${{ steps.meta_alpine.outputs.labels }}
+          tags: ${{ steps.meta_ubuntu.outputs.tags }}
+          labels: ${{ steps.meta_ubuntu.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
@@ -128,8 +127,8 @@ jobs:
           echo "Built and pushed default image: ${{ steps.meta_mlnode.outputs.tags }}"
           echo "Registry: ${{ env.REGISTRY }}"
 
-      - name: Output image info (alpine)
-        if: github.event_name != 'pull_request' && steps.targets.outputs.build_alpine == 'true'
+      - name: Output image info (ubuntu)
+        if: github.event_name != 'pull_request' && steps.targets.outputs.build_ubuntu == 'true'
         run: |
-          echo "Built and pushed alpine image: ${{ steps.meta_alpine.outputs.tags }}"
+          echo "Built and pushed ubuntu image: ${{ steps.meta_ubuntu.outputs.tags }}"
           echo "Registry: ${{ env.REGISTRY }}"
