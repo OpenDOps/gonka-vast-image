@@ -1,8 +1,12 @@
 FROM alpine:3.20
 
-# Install required packages
-RUN apk add --no-cache bash nginx nano wget tar ca-certificates shadow && \
+# Install required packages, including OpenSSH server
+RUN apk add --no-cache bash nginx nano wget tar ca-certificates shadow openssh && \
     mkdir -p /run/nginx
+
+# Prepare SSH server (create user and host keys)
+RUN adduser -D -s /bin/bash frpuser && echo "frpuser:changeme" | chpasswd && \
+    ssh-keygen -A
 
 # Configure nginx
 COPY nginx-single.conf /etc/nginx/nginx.conf
@@ -14,7 +18,11 @@ RUN mkdir -p /etc/wireguard && \
 
 # Copy start script
 COPY start.sh /start.sh
+COPY alpine-start.sh /alpine-start.sh
 RUN chmod +x /start.sh
+RUN chmod +x /alpine-start.sh
 
-ENTRYPOINT ["/start.sh"]
+EXPOSE 22
+
+ENTRYPOINT ["/alpine-start.sh"]
 
