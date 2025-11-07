@@ -87,9 +87,7 @@ jobs:
         id: meta_alpine
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ github.repository }}
-          flavor: |
-            suffix=-alpine
+          images: ${{ env.REGISTRY }}/${{ github.repository }}-alpine
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -130,7 +128,7 @@ jobs:
           echo "Built and pushed default image: ${{ steps.meta_mlnode.outputs.tags }}"
           echo "Registry: ${{ env.REGISTRY }}"
 
-      - name: Output image info (mlnode)
+      - name: Output image info (alpine)
         if: github.event_name != 'pull_request' && steps.targets.outputs.build_alpine == 'true'
         run: |
           echo "Built and pushed alpine image: ${{ steps.meta_alpine.outputs.tags }}"
