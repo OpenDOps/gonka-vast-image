@@ -28,7 +28,7 @@ token = ${SECRET_FRP_TOKEN}
 [client-mlnode-port5000-${CLIENT_ID}]
 type = tcp
 local_ip = 127.0.0.1
-local_port = 5001
+local_port = 5050
 remote_port = 50${CLIENT_ID}
 
 [client-mlnode-${CLIENT_ID}]
@@ -52,7 +52,7 @@ sleep 1
 if [ "${UBUNTU_TEST}" = "true" ]; then
     echo "UBUNTU_TEST is true; starting test HTTP servers on 8080 and 5000..."
     python3 /http_server.py --port 8080 &
-    python3 /http_server.py --port 5000 &
+    python3 /http_server.py --port 5050 &
     wait -n
 else
     echo "Creating user and group 'appuser' and 'appgroup'..."
