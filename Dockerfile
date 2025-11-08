@@ -13,6 +13,8 @@ COPY nginx-single.conf /etc/nginx/nginx.conf
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
 
+WORKDIR /app
+
 # Use start script as entrypoint
 ENTRYPOINT ["/start.sh"]
 
