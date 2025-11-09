@@ -16,6 +16,10 @@ RUN mkdir -p /tmp/frp && \
     rm -rf /tmp/frp && \
     mkdir -p /etc/frp /var/frp
 
+# Install compressa-perf and Python dependencies, for benchmarking
+RUN pip install --no-cache-dir pycparser secp256k1 \
+    && pip install --no-cache-dir git+https://github.com/product-science/compressa-perf.git
+
 # Configure nginx (single container version)
 COPY nginx-single.conf /etc/nginx/nginx.conf
 
