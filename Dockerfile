@@ -21,6 +21,12 @@ RUN pip install --no-cache-dir pycparser \
     && pip install --no-cache-dir --use-pep517 secp256k1 \
     && pip install --no-cache-dir git+https://github.com/product-science/compressa-perf.git
 
+RUN mkdir -p /data/compressa-tests
+COPY compressa-tests/config.yml /data/compressa-tests/config.yml
+COPY compressa-tests/inference-up.py /data/compressa-tests/inference-up.py
+COPY compressa-tests/start-test.sh /data/compressa-tests/start-test.sh
+RUN chmod +x /data/compressa-tests/start-test.sh
+
 # Configure nginx (single container version)
 COPY nginx-single.conf /etc/nginx/nginx.conf
 

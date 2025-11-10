@@ -1,0 +1,1 @@
+compressa-perf measure-from-yaml --no-sign --node_url http://38.99.105.120:20765 config.yml --model_name Qwen/Qwen3-235B-A22B-Instruct-2507-FP8
