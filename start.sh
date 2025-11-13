@@ -73,6 +73,8 @@ else
       echo "User 'appuser' already exists"
     fi
 
+    //TODO: Start parallel task to download model weights and start the inference server
+
     echo "Starting uvicorn application..."
 
     source /app/packages/api/.venv/bin/activate
