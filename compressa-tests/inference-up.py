@@ -6,6 +6,8 @@ import requests
 MODEL_ALIASES: Dict[str, str] = {
     "Qwen3-235B": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
     "Qwen3-32B": "Qwen/Qwen3-32B-FP8",
+    "Qwen2.5-7B": "Qwen/Qwen2.5-7B-Instruct",
+    "QwQ-32B": "Qwen/QwQ-32B",
 }
 
 
@@ -58,7 +60,7 @@ def parse_args() -> argparse.Namespace:
         "--model",
         required=True,
         help="Model alias or full name (Qwen3-235B, Qwen3-32B, "
-        "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8, Qwen/Qwen3-32B-FP8).",
+        "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8, Qwen/Qwen3-32B-FP8, Qwen/Qwen2.5-7B-Instruct, Qwen/QwQ-32B).",
     )
     parser.add_argument(
         "--tensor-parallel-size",

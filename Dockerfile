@@ -2,7 +2,7 @@ FROM ghcr.io/product-science/mlnode:3.0.10
 
 # Install nginx, pkg-config and wireguard userspace tools (without resolvconf)
 RUN apt update && \
-    apt install -y --no-install-recommends nginx nano wget pkg-config && \
+    apt install -y --no-install-recommends nginx nano wget pkg-config curl && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -37,6 +37,7 @@ COPY start.sh /start.sh
 RUN chmod +x /start.sh
 
 ENV HF_HOME=/data/hf-cache
+ENV MODEL_NAME=Qwen/Qwen3-32B-FP8
 
 WORKDIR /app
 

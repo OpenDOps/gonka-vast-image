@@ -1,15 +1,33 @@
 #!/bin/bash
 set -e
 
+if [ -z "$API_NODE_PORT" ]; then
+    echo "API_NODE_PORT is a required environment variable." >&2
+    exit 1
+fi
+
+if [ -z "$API_NODE_IP" ]; then
+    API_NODE_IP="$FRP_SERVER_IP"
+fi
+
+if [ -z "$TENSOR_PARALLEL_SIZE" ]; then
+    TENSOR_PARALLEL_SIZE=1
+fi
+
+if ! [[ "$TENSOR_PARALLEL_SIZE" =~ ^[1-4]$ ]]; then
+    echo "TENSOR_PARALLEL_SIZE must be an integer from 1 to 4." >&2
+    exit 1
+fi
+
 # Client ID is a number from 01 to 99
-if [[ ! "$CLIENT_ID" =~ ^[0-9]{2}$ ]]; then
-    echo "CLIENT_ID must be a two-digit number between 01 and 99." >&2
+if [[ ! "$CLIENT_ID" =~ ^[0-9]{4}$ ]]; then
+    echo "CLIENT_ID must be a four-digit number between 0001 and 9999." >&2
     exit 1
 fi
 
 CLIENT_ID_NUM=$((10#$CLIENT_ID))
-if [ "$CLIENT_ID_NUM" -lt 1 ] || [ "$CLIENT_ID_NUM" -gt 99 ]; then
-    echo "CLIENT_ID must be between 01 and 99." >&2
+if [ "$CLIENT_ID_NUM" -lt 1 ] || [ "$CLIENT_ID_NUM" -gt 9999 ]; then
+    echo "CLIENT_ID must be between 0001 and 9999." >&2
     exit 1
 fi
 
@@ -17,6 +35,11 @@ if [ -z "$SECRET_FRP_TOKEN" ] || [ -z "$FRP_SERVER_IP" ] || [ -z "$FRP_SERVER_PO
     echo "Missing FRP configuration: SECRET_FRP_TOKEN, FRP_SERVER_IP, and FRP_SERVER_PORT are required." >&2
     exit 1
 fi
+
+if [ -z "$NODE_ID" ]; then
+    NODE_ID="$CLIENT_ID"
+fi
+
 
 echo "Writing /etc/frp/frpc.ini..."
 cat > /etc/frp/frpc.ini <<EOF
@@ -29,13 +52,13 @@ token = ${SECRET_FRP_TOKEN}
 type = tcp
 local_ip = 127.0.0.1
 local_port = 5050
-remote_port = 50${CLIENT_ID}
+remote_port = 5${CLIENT_ID}
 
 [client-mlnode-${CLIENT_ID}]
 type = tcp
 local_ip = 127.0.0.1
 local_port = 8081
-remote_port = 80${CLIENT_ID}
+remote_port = 8${CLIENT_ID}
 EOF
 
 echo "Starting frpc in background..."
@@ -73,7 +96,24 @@ else
       echo "User 'appuser' already exists"
     fi
 
-    //TODO: Start parallel task to download model weights and start the inference server
+    mkdir -p $HF_HOME
+    huggingface-cli download $MODEL_NAME
+
+    #TODO: Register new mlnode with server (API_NODE_IP, API_NODE_PORT)
+    curl -X POST http://${API_NODE_IP}:${API_NODE_PORT}/admin/v1/nodes \
+     -H "Content-Type: application/json" \
+     -d '{
+       "id": "$NODE_ID",
+       "host": "frps",
+       "inference_port": 5${CLIENT_ID},
+       "poc_port": 8${CLIENT_ID},
+       "max_concurrent": 500,
+       "models": {
+         "$MODEL_NAME": {
+           "args": ["--tensor-parallel-size","$TENSOR_PARALLEL_SIZE"]
+         }
+       }
+     }'
 
     echo "Starting uvicorn application..."
 
