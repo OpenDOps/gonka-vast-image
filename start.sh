@@ -99,21 +99,36 @@ else
     mkdir -p $HF_HOME
     huggingface-cli download $MODEL_NAME
 
-    #TODO: Register new mlnode with server (API_NODE_IP, API_NODE_PORT)
-    curl -X POST http://${API_NODE_IP}:${API_NODE_PORT}/admin/v1/nodes \
-     -H "Content-Type: application/json" \
-     -d '{
-       "id": "$NODE_ID",
+    # If $REGISTRATION_ENDPOINT is empty, set it to '/admin/v1/nodes'
+    if [ -z "$REGISTRATION_ENDPOINT" ]; then
+      REGISTRATION_ENDPOINT="/admin/v1/nodes"
+    fi
+
+    # If $REGISTRATION_JSON is empty, set it to the default registration JSON
+    if [ -z "$REGISTRATION_JSON" ]; then
+      REGISTRATION_JSON='{
+       "id": "'$NODE_ID'",
        "host": "frps",
-       "inference_port": 5${CLIENT_ID},
-       "poc_port": 8${CLIENT_ID},
+       "inference_port": 5'${CLIENT_ID}',
+       "poc_port": 8'${CLIENT_ID}',
        "max_concurrent": 500,
        "models": {
-         "$MODEL_NAME": {
-           "args": ["--tensor-parallel-size","$TENSOR_PARALLEL_SIZE"]
+         "'$MODEL_NAME'": {
+           "args": ["--tensor-parallel-size","'$TENSOR_PARALLEL_SIZE'"]
          }
        }
      }'
+    fi
+
+    echo "Registering new mlnode with server"
+    echo "curl -X POST http://${API_NODE_IP}:${API_NODE_PORT}${REGISTRATION_ENDPOINT} \
+     -H "Content-Type: application/json" \
+     -d '$REGISTRATION_JSON'"
+
+    #TODO: Register new mlnode with server (API_NODE_IP, API_NODE_PORT)
+    curl -X POST http://${API_NODE_IP}:${API_NODE_PORT}${REGISTRATION_ENDPOINT} \
+     -H "Content-Type: application/json" \
+     -d '$REGISTRATION_JSON'
 
     echo "Starting uvicorn application..."
 
