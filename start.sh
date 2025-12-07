@@ -1,10 +1,34 @@
 #!/bin/bash
 set -e
 
-if [ -z "$API_NODE_PORT" ]; then
-    echo "API_NODE_PORT is a required environment variable." >&2
+if [ -z "$API_NODE_PORTS" ]; then
+    echo "API_NODE_PORTS is a required environment variable." >&2
     exit 1
 fi
+
+# Validate API_NODE_PORTS format: must be digits separated by commas
+if [[ ! "$API_NODE_PORTS" =~ ^[0-9]+(,[0-9]+)*$ ]]; then
+    echo "API_NODE_PORTS must be a comma-separated list of digits (e.g., '8080' or '8080,8081,8082')." >&2
+    exit 1
+fi
+
+# Transform API_NODE_PORTS (digit or comma-separated digits) into an array
+# Remove spaces, split by comma
+IFS=',' read -ra NODE_PORTS_ARRAY <<< "${API_NODE_PORTS// /}"
+
+# Validate each port number is in valid range (1-65535)
+for port in "${NODE_PORTS_ARRAY[@]}"; do
+    if [ -z "$port" ]; then
+        echo "API_NODE_PORTS contains empty elements. Use format like '8080,8081'." >&2
+        exit 1
+    fi
+    port_num=$((10#$port))
+    if [ "$port_num" -lt 1 ] || [ "$port_num" -gt 65535 ]; then
+        echo "Port $port is out of valid range (1-65535)." >&2
+        exit 1
+    fi
+done
+
 
 if [ -z "$API_NODE_IP" ]; then
     API_NODE_IP="$FRP_SERVER_IP"
@@ -121,14 +145,16 @@ else
     fi
 
     echo "Registering new mlnode with server"
-    echo "curl -X POST http://${API_NODE_IP}:${API_NODE_PORT}${REGISTRATION_ENDPOINT} \
-     -H "Content-Type: application/json" \
-     -d '$REGISTRATION_JSON'"
+    for API_NODE_PORT in "${NODE_PORTS_ARRAY[@]}"; do
+      echo "Registering with API node at ${API_NODE_IP}:${API_NODE_PORT}"
+      echo "curl -X POST http://${API_NODE_IP}:${API_NODE_PORT}${REGISTRATION_ENDPOINT} \
+       -H "Content-Type: application/json" \
+       -d '$REGISTRATION_JSON'"
 
-    #TODO: Register new mlnode with server (API_NODE_IP, API_NODE_PORT)
-    curl -X POST http://${API_NODE_IP}:${API_NODE_PORT}${REGISTRATION_ENDPOINT} \
-     -H "Content-Type: application/json" \
-     -d '$REGISTRATION_JSON'
+      curl -X POST http://${API_NODE_IP}:${API_NODE_PORT}${REGISTRATION_ENDPOINT} \
+       -H "Content-Type: application/json" \
+       -d '$REGISTRATION_JSON'
+    done
 
     echo "Starting uvicorn application..."
 
