@@ -13,8 +13,7 @@ RUN mkdir -p /tmp/frp && \
     wget -q "https://github.com/fatedier/frp/releases/download/v${FRP_VERSION}/frp_${FRP_VERSION}_linux_amd64.tar.gz" && \
     tar -xzf "frp_${FRP_VERSION}_linux_amd64.tar.gz" && \
     install -m 0755 "frp_${FRP_VERSION}_linux_amd64/frpc" /usr/bin/frpc && \
-    rm -rf /tmp/frp && \
-    mkdir -p /etc/frp /var/frp
+    rm -rf /tmp/frp
 
 # Install compressa-perf and Python dependencies, for benchmarking
 RUN pip install --no-cache-dir pycparser \

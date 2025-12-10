@@ -8,6 +8,15 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/* && \
     mkdir -p /run/nginx /run/sshd
 
+# Install FRP client (frpc)
+ARG FRP_VERSION=0.65.0
+RUN mkdir -p /tmp/frp && \
+    cd /tmp/frp && \
+    wget -q "https://github.com/fatedier/frp/releases/download/v${FRP_VERSION}/frp_${FRP_VERSION}_linux_amd64.tar.gz" && \
+    tar -xzf "frp_${FRP_VERSION}_linux_amd64.tar.gz" && \
+    install -m 0755 "frp_${FRP_VERSION}_linux_amd64/frpc" /usr/bin/frpc && \
+    rm -rf /tmp/frp
+
 # Configure nginx
 COPY nginx-single.conf /etc/nginx/nginx.conf
 

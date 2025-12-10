@@ -196,7 +196,7 @@ else
       echo "Registering with API node at ${API_NODE}"
       echo "curl -X POST http://${API_NODE}${REGISTRATION_ENDPOINT} \
        -H "Content-Type: application/json" \
-       -d \'${REGISTRATION_JSON}\'
+       -d '${REGISTRATION_JSON}'"
 
       curl -X POST http://${API_NODE}${REGISTRATION_ENDPOINT} \
        -H "Content-Type: application/json" \
