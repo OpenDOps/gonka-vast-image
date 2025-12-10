@@ -194,10 +194,10 @@ if [ "${UBUNTU_TEST}" = "true" ]; then
     # Start Python server on port 8080
     # Using -u flag for unbuffered output so errors appear immediately in Docker logs
     # Output goes to stdout/stderr (captured by Docker logs) and also saved to log file
-    echo "Starting HTTP server on port 8080..."
-    python3 -u /http_server.py --port 8080 > "$LOG_DIR/http_server_8080.log" 2>&1 &
-    SERVER_8080_PID=$!
-    echo "HTTP server 8080 started with PID: $SERVER_8080_PID (logs: $LOG_DIR/http_server_8080.log)"
+    echo "Starting HTTP server on port 8081..."
+    python3 -u /http_server.py --port 8081 > "$LOG_DIR/http_server_8081.log" 2>&1 &
+    SERVER_8081_PID=$!
+    echo "HTTP server 8081 started with PID: $SERVER_8081_PID (logs: $LOG_DIR/http_server_8081.log)"
     
     # Start Python server on port 5050
     echo "Starting HTTP server on port 5050..."
@@ -206,20 +206,20 @@ if [ "${UBUNTU_TEST}" = "true" ]; then
     echo "HTTP server 5050 started with PID: $SERVER_5050_PID (logs: $LOG_DIR/http_server_5050.log)"
     
     # Also tail the log files to stdout so they appear in Docker logs
-    tail -f "$LOG_DIR/http_server_8080.log" | sed 's/^/[HTTP-8080] /' &
+    tail -f "$LOG_DIR/http_server_8081.log" | sed 's/^/[HTTP-8081] /' &
     tail -f "$LOG_DIR/http_server_5050.log" | sed 's/^/[HTTP-5050] /' &
     
     # Wait a moment and check if processes are still running
     sleep 2
-    if ! kill -0 $SERVER_8080_PID 2>/dev/null; then
-        echo "ERROR: HTTP server on port 8080 crashed immediately!" >&2
+    if ! kill -0 $SERVER_8081_PID 2>/dev/null; then
+        echo "ERROR: HTTP server on port 8081 crashed immediately!" >&2
         echo "Last 50 lines of log:" >&2
-        [ -f "$LOG_DIR/http_server_8080.log" ] && tail -50 "$LOG_DIR/http_server_8080.log" >&2 || echo "No log file found" >&2
-        echo "--- End of log for port 8080 ---" >&2
+        [ -f "$LOG_DIR/http_server_8081.log" ] && tail -50 "$LOG_DIR/http_server_8081.log" >&2 || echo "No log file found" >&2
+        echo "--- End of log for port 8081 ---" >&2
     else
-        echo "HTTP server 8080 is running (PID: $SERVER_8080_PID)"
+        echo "HTTP server 8081 is running (PID: $SERVER_8080_PID)"
         # Show initial log output
-        [ -f "$LOG_DIR/http_server_8080.log" ] && cat "$LOG_DIR/http_server_8080.log"
+        [ -f "$LOG_DIR/http_server_8081.log" ] && cat "$LOG_DIR/http_server_8081.log"
     fi
     
     if ! kill -0 $SERVER_5050_PID 2>/dev/null; then
@@ -238,8 +238,8 @@ if [ "${UBUNTU_TEST}" = "true" ]; then
         while true; do
             sleep 5
             if ! kill -0 $SERVER_8080_PID 2>/dev/null; then
-                echo "WARNING: HTTP server 8080 (PID: $SERVER_8080_PID) has died!" >&2
-                [ -f "$LOG_DIR/http_server_8080.log" ] && tail -20 "$LOG_DIR/http_server_8080.log" >&2
+                echo "WARNING: HTTP server 8081 (PID: $SERVER_8080_PID) has died!" >&2
+                [ -f "$LOG_DIR/http_server_8081.log" ] && tail -20 "$LOG_DIR/http_server_8080.log" >&2
             fi
             if ! kill -0 $SERVER_5050_PID 2>/dev/null; then
                 echo "WARNING: HTTP server 5050 (PID: $SERVER_5050_PID) has died!" >&2
