@@ -90,6 +90,16 @@ if [ -z "$NODE_ID" ]; then
     NODE_ID="$CLIENT_ID"
 fi
 
+# Set FRP config directory (default to /etc/frp, can be overridden via FRP_CONFIG_DIR env var)
+FRP_CONFIG_DIR="${FRP_CONFIG_DIR:-/etc/frp}"
+
+# Ensure FRP config directory exists and is writable
+mkdir -p "$FRP_CONFIG_DIR"
+if [ ! -w "$FRP_CONFIG_DIR" ]; then
+    echo "Error: $FRP_CONFIG_DIR directory is not writable." >&2
+    exit 1
+fi
+
 # Create frpc config files for each FRP server
 echo "Writing FRP client configuration files..."
 for i in "${!FRP_SERVERS_ARRAY[@]}"; do
@@ -97,8 +107,8 @@ for i in "${!FRP_SERVERS_ARRAY[@]}"; do
     FRP_SERVER_IP="${server%%:*}"
     FRP_SERVER_PORT="${server##*:}"
     
-    echo "Writing /etc/frp/frpc${i}.ini for server ${FRP_SERVER_IP}:${FRP_SERVER_PORT}..."
-    cat > /etc/frp/frpc${i}.ini <<EOF
+    echo "Writing ${FRP_CONFIG_DIR}/frpc${i}.ini for server ${FRP_SERVER_IP}:${FRP_SERVER_PORT}..."
+    cat > "${FRP_CONFIG_DIR}/frpc${i}.ini" <<EOF
 [common]
 server_addr = ${FRP_SERVER_IP}
 server_port = ${FRP_SERVER_PORT}
@@ -121,8 +131,8 @@ done
 # Start frpc processes for each config file
 echo "Starting frpc processes in background..."
 for i in "${!FRP_SERVERS_ARRAY[@]}"; do
-    echo "Starting frpc with config /etc/frp/frpc${i}.ini..."
-    /usr/bin/frpc -c /etc/frp/frpc${i}.ini &
+    echo "Starting frpc with config ${FRP_CONFIG_DIR}/frpc${i}.ini..."
+    /usr/bin/frpc -c "${FRP_CONFIG_DIR}/frpc${i}.ini" &
 done
 
 # Start nginx in background
