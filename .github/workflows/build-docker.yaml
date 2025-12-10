@@ -19,6 +19,11 @@ on:
         options:
           - mlnode
           - ubuntu
+      base_image_tag:
+        description: 'Tag of the base image to use (default: latest)'
+        required: false
+        type: string
+        default: 'latest'
 
 env:
   REGISTRY: ghcr.io
@@ -104,6 +109,9 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta_mlnode.outputs.tags }}
           labels: ${{ steps.meta_mlnode.outputs.labels }}
+          build-args: |
+            GITHUB_REPOSITORY=${{ github.repository }}
+            BASE_IMAGE_TAG=${{ github.event.inputs.base_image_tag || 'latest' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
