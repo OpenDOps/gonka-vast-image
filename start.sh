@@ -170,12 +170,12 @@ if [ "${UBUNTU_TEST}" = "true" ]; then
     for API_NODE in "${API_NODES_ARRAY[@]}"; do
       echo "Registering with API node at ${API_NODE}"
       echo "curl -X POST http://${API_NODE}${REGISTRATION_ENDPOINT} \
-       -H "Content-Type: application/json" \
-       -d '${REGISTRATION_JSON}'"
+       -H \"Content-Type: application/json\" \
+       -d \"${REGISTRATION_JSON}\""
 
-      curl -X POST http://${API_NODE}${REGISTRATION_ENDPOINT} \
+      echo "${REGISTRATION_JSON}" | curl -X POST http://${API_NODE}${REGISTRATION_ENDPOINT} \
        -H "Content-Type: application/json" \
-       -d \'${REGISTRATION_JSON}\'
+       -d @-
     done
 
     echo "UBUNTU_TEST is true; starting test HTTP servers on 8080 and 5000..."
@@ -229,12 +229,12 @@ else
     for API_NODE in "${API_NODES_ARRAY[@]}"; do
       echo "Registering with API node at ${API_NODE}"
       echo "curl -X POST http://${API_NODE}${REGISTRATION_ENDPOINT} \
-       -H "Content-Type: application/json" \
-       -d '${REGISTRATION_JSON}'"
+       -H \"Content-Type: application/json\" \
+       -d \"${REGISTRATION_JSON}\""
 
-      curl -X POST http://${API_NODE}${REGISTRATION_ENDPOINT} \
+      echo "${REGISTRATION_JSON}" | curl -X POST http://${API_NODE}${REGISTRATION_ENDPOINT} \
        -H "Content-Type: application/json" \
-       -d \'${REGISTRATION_JSON}\'
+       -d @-
     done
 
     echo "Starting uvicorn application..."
