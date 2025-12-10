@@ -217,7 +217,7 @@ if [ "${UBUNTU_TEST}" = "true" ]; then
         [ -f "$LOG_DIR/http_server_8081.log" ] && tail -50 "$LOG_DIR/http_server_8081.log" >&2 || echo "No log file found" >&2
         echo "--- End of log for port 8081 ---" >&2
     else
-        echo "HTTP server 8081 is running (PID: $SERVER_8080_PID)"
+        echo "HTTP server 8081 is running (PID: $SERVER_8081_PID)"
         # Show initial log output
         [ -f "$LOG_DIR/http_server_8081.log" ] && cat "$LOG_DIR/http_server_8081.log"
     fi
@@ -237,9 +237,9 @@ if [ "${UBUNTU_TEST}" = "true" ]; then
     (
         while true; do
             sleep 5
-            if ! kill -0 $SERVER_8080_PID 2>/dev/null; then
-                echo "WARNING: HTTP server 8081 (PID: $SERVER_8080_PID) has died!" >&2
-                [ -f "$LOG_DIR/http_server_8081.log" ] && tail -20 "$LOG_DIR/http_server_8080.log" >&2
+            if ! kill -0 $SERVER_8081_PID 2>/dev/null; then
+                echo "WARNING: HTTP server 8081 (PID: $SERVER_8081_PID) has died!" >&2
+                [ -f "$LOG_DIR/http_server_8081.log" ] && tail -20 "$LOG_DIR/http_server_8081.log" >&2
             fi
             if ! kill -0 $SERVER_5050_PID 2>/dev/null; then
                 echo "WARNING: HTTP server 5050 (PID: $SERVER_5050_PID) has died!" >&2
