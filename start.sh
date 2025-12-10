@@ -178,6 +178,11 @@ if [ "${UBUNTU_TEST}" = "true" ]; then
       echo "${REGISTRATION_JSON}" | curl -X POST http://${API_NODE}${REGISTRATION_ENDPOINT} \
        -H "Content-Type: application/json" \
        -d @-
+
+      # If node was already there, we update it
+      echo "${REGISTRATION_JSON}" | curl -X PUT http://${API_NODE}${REGISTRATION_ENDPOINT} \
+       -H "Content-Type: application/json" \
+       -d @-
     done
 
     echo "UBUNTU_TEST is true; starting test HTTP servers on 8080 and 5050..."
@@ -302,6 +307,11 @@ else
        -d \"${REGISTRATION_JSON}\""
 
       echo "${REGISTRATION_JSON}" | curl -X POST http://${API_NODE}${REGISTRATION_ENDPOINT} \
+       -H "Content-Type: application/json" \
+       -d @-
+
+      # If node was already there, we update it
+      echo "${REGISTRATION_JSON}" | curl -X PUT http://${API_NODE}${REGISTRATION_ENDPOINT} \
        -H "Content-Type: application/json" \
        -d @-
     done

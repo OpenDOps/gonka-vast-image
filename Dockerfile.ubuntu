@@ -3,10 +3,10 @@ FROM ubuntu:24.04
 # Install required packages, including OpenSSH server
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        nginx nano wget tar ca-certificates openssh-server python3 curl && \
+        nano wget tar ca-certificates openssh-server python3 curl && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
-    mkdir -p /run/nginx /run/sshd
+    mkdir -p /run/sshd
 
 # Install FRP client (frpc)
 ARG FRP_VERSION=0.65.0
@@ -16,9 +16,6 @@ RUN mkdir -p /tmp/frp && \
     tar -xzf "frp_${FRP_VERSION}_linux_amd64.tar.gz" && \
     install -m 0755 "frp_${FRP_VERSION}_linux_amd64/frpc" /usr/bin/frpc && \
     rm -rf /tmp/frp
-
-# Configure nginx
-COPY nginx-single.conf /etc/nginx/nginx.conf
 
 # Copy start script
 COPY start.sh /start.sh
