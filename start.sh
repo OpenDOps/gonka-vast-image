@@ -144,6 +144,40 @@ sleep 1
 
 # Start the appropriate service based on UBUNTU_TEST flag
 if [ "${UBUNTU_TEST}" = "true" ]; then
+    echo "First we try to register the mlnode with the servers..."
+    # If $REGISTRATION_ENDPOINT is empty, set it to '/admin/v1/nodes'
+    if [ -z "$REGISTRATION_ENDPOINT" ]; then
+      REGISTRATION_ENDPOINT="/admin/v1/nodes"
+    fi
+
+    # If $REGISTRATION_JSON is empty, set it to the default registration JSON
+    if [ -z "$REGISTRATION_JSON" ]; then
+      REGISTRATION_JSON='{
+       "id": "'$NODE_ID'",
+       "host": "frps",
+       "inference_port": 5'${CLIENT_ID}',
+       "poc_port": 8'${CLIENT_ID}',
+       "max_concurrent": 500,
+       "models": {
+         "'$MODEL_NAME'": {
+           "args": ["--tensor-parallel-size","'$TENSOR_PARALLEL_SIZE'"]
+         }
+       }
+     }'
+    fi
+
+    echo "Registering new mlnode with server"
+    for API_NODE in "${API_NODES_ARRAY[@]}"; do
+      echo "Registering with API node at ${API_NODE}"
+      echo "curl -X POST http://${API_NODE}${REGISTRATION_ENDPOINT} \
+       -H "Content-Type: application/json" \
+       -d '${REGISTRATION_JSON}'"
+
+      curl -X POST http://${API_NODE}${REGISTRATION_ENDPOINT} \
+       -H "Content-Type: application/json" \
+       -d \'${REGISTRATION_JSON}\'
+    done
+
     echo "UBUNTU_TEST is true; starting test HTTP servers on 8080 and 5000..."
     python3 /http_server.py --port 8080 &
     python3 /http_server.py --port 5050 &
