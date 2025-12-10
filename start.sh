@@ -1,38 +1,35 @@
 #!/bin/bash
 set -e
 
-if [ -z "$API_NODE_PORTS" ]; then
-    echo "API_NODE_PORTS is a required environment variable." >&2
+# Validate API_NODES format and parse
+if [ -z "$API_NODES" ]; then
+    echo "API_NODES is required. It must be a comma-separated list of ip:port (e.g., '192.168.1.1:8080' or '192.168.1.1:8080,192.168.1.2:8081')." >&2
     exit 1
 fi
 
-# Validate API_NODE_PORTS format: must be digits separated by commas
-if [[ ! "$API_NODE_PORTS" =~ ^[0-9]+(,[0-9]+)*$ ]]; then
-    echo "API_NODE_PORTS must be a comma-separated list of digits (e.g., '8080' or '8080,8081,8082')." >&2
-    exit 1
-fi
-
-# Transform API_NODE_PORTS (digit or comma-separated digits) into an array
+# Transform API_NODES into an array
 # Remove spaces, split by comma
-IFS=',' read -ra NODE_PORTS_ARRAY <<< "${API_NODE_PORTS// /}"
+IFS=',' read -ra API_NODES_ARRAY <<< "${API_NODES// /}"
 
-# Validate each port number is in valid range (1-65535)
-for port in "${NODE_PORTS_ARRAY[@]}"; do
-    if [ -z "$port" ]; then
-        echo "API_NODE_PORTS contains empty elements. Use format like '8080,8081'." >&2
+# Validate each API node entry format (ip:port)
+for node in "${API_NODES_ARRAY[@]}"; do
+    if [ -z "$node" ]; then
+        echo "API_NODES contains empty elements. Use format like '192.168.1.1:8080,192.168.1.2:8081'." >&2
         exit 1
     fi
+    if [[ ! "$node" =~ ^[^:]+:[0-9]+$ ]]; then
+        echo "Invalid API node format: '$node'. Expected format: 'ip:port' (e.g., '192.168.1.1:8080')." >&2
+        exit 1
+    fi
+    # Extract and validate port
+    port="${node##*:}"
     port_num=$((10#$port))
     if [ "$port_num" -lt 1 ] || [ "$port_num" -gt 65535 ]; then
-        echo "Port $port is out of valid range (1-65535)." >&2
+        echo "Port $port in '$node' is out of valid range (1-65535)." >&2
         exit 1
     fi
 done
 
-
-if [ -z "$API_NODE_IP" ]; then
-    API_NODE_IP="$FRP_SERVER_IP"
-fi
 
 if [ -z "$TENSOR_PARALLEL_SIZE" ]; then
     TENSOR_PARALLEL_SIZE=1
@@ -55,18 +52,53 @@ if [ "$CLIENT_ID_NUM" -lt 1 ] || [ "$CLIENT_ID_NUM" -gt 9999 ]; then
     exit 1
 fi
 
-if [ -z "$SECRET_FRP_TOKEN" ] || [ -z "$FRP_SERVER_IP" ] || [ -z "$FRP_SERVER_PORT" ]; then
-    echo "Missing FRP configuration: SECRET_FRP_TOKEN, FRP_SERVER_IP, and FRP_SERVER_PORT are required." >&2
+# Validate FRP_SERVERS format and parse
+if [ -z "$FRP_SERVERS" ]; then
+    echo "FRP_SERVERS is required. It must be a comma-separated list of host:port (e.g., '192.168.1.1:7000' or '192.168.1.1:7000,192.168.1.2:7000')." >&2
     exit 1
 fi
+
+if [ -z "$SECRET_FRP_TOKEN" ]; then
+    echo "SECRET_FRP_TOKEN is required." >&2
+    exit 1
+fi
+
+# Transform FRP_SERVERS into an array
+# Remove spaces, split by comma
+IFS=',' read -ra FRP_SERVERS_ARRAY <<< "${FRP_SERVERS// /}"
+
+# Validate each server entry format (host:port)
+for server in "${FRP_SERVERS_ARRAY[@]}"; do
+    if [ -z "$server" ]; then
+        echo "FRP_SERVERS contains empty elements. Use format like '192.168.1.1:7000,192.168.1.2:7000'." >&2
+        exit 1
+    fi
+    if [[ ! "$server" =~ ^[^:]+:[0-9]+$ ]]; then
+        echo "Invalid FRP server format: '$server'. Expected format: 'host:port' (e.g., '192.168.1.1:7000')." >&2
+        exit 1
+    fi
+    # Extract and validate port
+    port="${server##*:}"
+    port_num=$((10#$port))
+    if [ "$port_num" -lt 1 ] || [ "$port_num" -gt 65535 ]; then
+        echo "Port $port in '$server' is out of valid range (1-65535)." >&2
+        exit 1
+    fi
+done
 
 if [ -z "$NODE_ID" ]; then
     NODE_ID="$CLIENT_ID"
 fi
 
-
-echo "Writing /etc/frp/frpc.ini..."
-cat > /etc/frp/frpc.ini <<EOF
+# Create frpc config files for each FRP server
+echo "Writing FRP client configuration files..."
+for i in "${!FRP_SERVERS_ARRAY[@]}"; do
+    server="${FRP_SERVERS_ARRAY[$i]}"
+    FRP_SERVER_IP="${server%%:*}"
+    FRP_SERVER_PORT="${server##*:}"
+    
+    echo "Writing /etc/frp/frpc${i}.ini for server ${FRP_SERVER_IP}:${FRP_SERVER_PORT}..."
+    cat > /etc/frp/frpc${i}.ini <<EOF
 [common]
 server_addr = ${FRP_SERVER_IP}
 server_port = ${FRP_SERVER_PORT}
@@ -84,9 +116,14 @@ local_ip = 127.0.0.1
 local_port = 8081
 remote_port = 8${CLIENT_ID}
 EOF
+done
 
-echo "Starting frpc in background..."
-/usr/bin/frpc -c /etc/frp/frpc.ini &
+# Start frpc processes for each config file
+echo "Starting frpc processes in background..."
+for i in "${!FRP_SERVERS_ARRAY[@]}"; do
+    echo "Starting frpc with config /etc/frp/frpc${i}.ini..."
+    /usr/bin/frpc -c /etc/frp/frpc${i}.ini &
+done
 
 # Start nginx in background
 nginx &
@@ -145,15 +182,15 @@ else
     fi
 
     echo "Registering new mlnode with server"
-    for API_NODE_PORT in "${NODE_PORTS_ARRAY[@]}"; do
-      echo "Registering with API node at ${API_NODE_IP}:${API_NODE_PORT}"
-      echo "curl -X POST http://${API_NODE_IP}:${API_NODE_PORT}${REGISTRATION_ENDPOINT} \
+    for API_NODE in "${API_NODES_ARRAY[@]}"; do
+      echo "Registering with API node at ${API_NODE}"
+      echo "curl -X POST http://${API_NODE}${REGISTRATION_ENDPOINT} \
        -H "Content-Type: application/json" \
-       -d '$REGISTRATION_JSON'"
+       -d \'${REGISTRATION_JSON}\'
 
-      curl -X POST http://${API_NODE_IP}:${API_NODE_PORT}${REGISTRATION_ENDPOINT} \
+      curl -X POST http://${API_NODE}${REGISTRATION_ENDPOINT} \
        -H "Content-Type: application/json" \
-       -d '$REGISTRATION_JSON'
+       -d \'${REGISTRATION_JSON}\'
     done
 
     echo "Starting uvicorn application..."
