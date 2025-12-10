@@ -118,13 +118,13 @@ token = ${SECRET_FRP_TOKEN}
 type = tcp
 local_ip = 127.0.0.1
 local_port = 5050
-remote_port = 5${CLIENT_ID}
+remote_port = 1${CLIENT_ID}
 
 [client-mlnode-${CLIENT_ID}]
 type = tcp
 local_ip = 127.0.0.1
 local_port = 8081
-remote_port = 8${CLIENT_ID}
+remote_port = 2${CLIENT_ID}
 EOF
 done
 
@@ -153,10 +153,10 @@ if [ "${UBUNTU_TEST}" = "true" ]; then
     # If $REGISTRATION_JSON is empty, set it to the default registration JSON
     if [ -z "$REGISTRATION_JSON" ]; then
       REGISTRATION_JSON='{
-       "id": "'$NODE_ID'",
+       "id": "'${ID_PREFIX}${NODE_ID}'",
        "host": "frps",
-       "inference_port": 5'${CLIENT_ID}',
-       "poc_port": 8'${CLIENT_ID}',
+       "inference_port": 1'${CLIENT_ID}',
+       "poc_port": 2'${CLIENT_ID}',
        "max_concurrent": 500,
        "models": {
          "'$MODEL_NAME'": {
@@ -212,10 +212,10 @@ else
     # If $REGISTRATION_JSON is empty, set it to the default registration JSON
     if [ -z "$REGISTRATION_JSON" ]; then
       REGISTRATION_JSON='{
-       "id": "'$NODE_ID'",
+       "id": "'${ID_PREFIX}${NODE_ID}'",
        "host": "frps",
-       "inference_port": 5'${CLIENT_ID}',
-       "poc_port": 8'${CLIENT_ID}',
+       "inference_port": 1'${CLIENT_ID}',
+       "poc_port": 2'${CLIENT_ID}',
        "max_concurrent": 500,
        "models": {
          "'$MODEL_NAME'": {
