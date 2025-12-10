@@ -7,6 +7,8 @@ if [ -z "$API_NODES" ]; then
     exit 1
 fi
 
+echo "API_NODES: $API_NODES"
+
 # Transform API_NODES into an array
 # Remove spaces, split by comma
 IFS=',' read -ra API_NODES_ARRAY <<< "${API_NODES// /}"
@@ -178,10 +180,77 @@ if [ "${UBUNTU_TEST}" = "true" ]; then
        -d @-
     done
 
-    echo "UBUNTU_TEST is true; starting test HTTP servers on 8080 and 5000..."
-    python3 /http_server.py --port 8080 &
-    python3 /http_server.py --port 5050 &
-    wait -n
+    echo "UBUNTU_TEST is true; starting test HTTP servers on 8080 and 5050..."
+    
+    # Create log directory (configurable via LOG_DIR env var, defaults to /tmp/logs)
+    LOG_DIR="${LOG_DIR:-/tmp/logs}"
+    mkdir -p "$LOG_DIR"
+    
+    # Start Python server on port 8080
+    # Using -u flag for unbuffered output so errors appear immediately in Docker logs
+    # Output goes to stdout/stderr (captured by Docker logs) and also saved to log file
+    echo "Starting HTTP server on port 8080..."
+    python3 -u /http_server.py --port 8080 > "$LOG_DIR/http_server_8080.log" 2>&1 &
+    SERVER_8080_PID=$!
+    echo "HTTP server 8080 started with PID: $SERVER_8080_PID (logs: $LOG_DIR/http_server_8080.log)"
+    
+    # Start Python server on port 5050
+    echo "Starting HTTP server on port 5050..."
+    python3 -u /http_server.py --port 5050 > "$LOG_DIR/http_server_5050.log" 2>&1 &
+    SERVER_5050_PID=$!
+    echo "HTTP server 5050 started with PID: $SERVER_5050_PID (logs: $LOG_DIR/http_server_5050.log)"
+    
+    # Also tail the log files to stdout so they appear in Docker logs
+    tail -f "$LOG_DIR/http_server_8080.log" | sed 's/^/[HTTP-8080] /' &
+    tail -f "$LOG_DIR/http_server_5050.log" | sed 's/^/[HTTP-5050] /' &
+    
+    # Wait a moment and check if processes are still running
+    sleep 2
+    if ! kill -0 $SERVER_8080_PID 2>/dev/null; then
+        echo "ERROR: HTTP server on port 8080 crashed immediately!" >&2
+        echo "Last 50 lines of log:" >&2
+        [ -f "$LOG_DIR/http_server_8080.log" ] && tail -50 "$LOG_DIR/http_server_8080.log" >&2 || echo "No log file found" >&2
+        echo "--- End of log for port 8080 ---" >&2
+    else
+        echo "HTTP server 8080 is running (PID: $SERVER_8080_PID)"
+        # Show initial log output
+        [ -f "$LOG_DIR/http_server_8080.log" ] && cat "$LOG_DIR/http_server_8080.log"
+    fi
+    
+    if ! kill -0 $SERVER_5050_PID 2>/dev/null; then
+        echo "ERROR: HTTP server on port 5050 crashed immediately!" >&2
+        echo "Last 50 lines of log:" >&2
+        [ -f "$LOG_DIR/http_server_5050.log" ] && tail -50 "$LOG_DIR/http_server_5050.log" >&2 || echo "No log file found" >&2
+        echo "--- End of log for port 5050 ---" >&2
+    else
+        echo "HTTP server 5050 is running (PID: $SERVER_5050_PID)"
+        # Show initial log output
+        [ -f "$LOG_DIR/http_server_5050.log" ] && cat "$LOG_DIR/http_server_5050.log"
+    fi
+    
+    # Set up a background process to monitor and output logs to stdout
+    (
+        while true; do
+            sleep 5
+            if ! kill -0 $SERVER_8080_PID 2>/dev/null; then
+                echo "WARNING: HTTP server 8080 (PID: $SERVER_8080_PID) has died!" >&2
+                [ -f "$LOG_DIR/http_server_8080.log" ] && tail -20 "$LOG_DIR/http_server_8080.log" >&2
+            fi
+            if ! kill -0 $SERVER_5050_PID 2>/dev/null; then
+                echo "WARNING: HTTP server 5050 (PID: $SERVER_5050_PID) has died!" >&2
+                [ -f "$LOG_DIR/http_server_5050.log" ] && tail -20 "$LOG_DIR/http_server_5050.log" >&2
+            fi
+        done
+    ) &
+    MONITOR_PID=$!
+    
+    echo "Monitoring background processes. Logs saved to $LOG_DIR/"
+    echo "To view logs: docker exec <container> tail -f $LOG_DIR/http_server_*.log"
+    echo "Or check Docker logs: docker logs <container>"
+    
+    # Wait for all background processes to keep container running
+    echo "Waiting for background processes..."
+    wait
 else
     echo "Creating user and group 'appuser' and 'appgroup'..."
     HOST_UID=${HOST_UID:-1000}
