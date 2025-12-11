@@ -164,6 +164,10 @@ if [ "${UBUNTU_TEST}" = "true" ]; then
          "'$MODEL_NAME'": {
            "args": ["--tensor-parallel-size","'$TENSOR_PARALLEL_SIZE'"]
          }
+       },
+       "poc_hw": {
+         "type": "'${GPU_TYPE}'",
+         "num": '${NUM_GPUS}'
        }
      }'
     fi
@@ -295,6 +299,10 @@ else
          "'$MODEL_NAME'": {
            "args": ["--tensor-parallel-size","'$TENSOR_PARALLEL_SIZE'"]
          }
+       },
+       "poc_hw": {
+         "type": "'${GPU_TYPE}'",
+         "num": '${NUM_GPUS}'
        }
      }'
     fi
