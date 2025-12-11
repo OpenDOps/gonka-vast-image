@@ -319,6 +319,57 @@ else
     echo "Starting uvicorn application..."
 
     source /app/packages/api/.venv/bin/activate
-    exec uvicorn api.app:app --host=0.0.0.0 --port=8080
+    
+    # Start uvicorn in background
+    uvicorn api.app:app --host=0.0.0.0 --port=8080 &
+    UVICORN_PID=$!
+    echo "Uvicorn started with PID: $UVICORN_PID"
+    
+    # Wait for uvicorn to be ready (check if port 8080 is responding)
+    echo "Waiting for uvicorn to be ready..."
+    max_attempts=30
+    attempt=0
+    while [ $attempt -lt $max_attempts ]; do
+        # Try to connect to the port using curl
+        if curl -s -f http://localhost:8080/ >/dev/null 2>&1; then
+            echo "Uvicorn is ready!"
+            break
+        fi
+        attempt=$((attempt + 1))
+        sleep 1
+    done
+    
+    if [ $attempt -eq $max_attempts ]; then
+        if [ "${INFERENCE_NODE}" = "true" ]; then
+            echo "WARNING: Uvicorn may not be ready, but proceeding with inference-up call..." >&2
+        else
+            echo "WARNING: Uvicorn may not be ready..." >&2
+        fi
+    fi
+    
+    # Call inference-up.py to trigger model loading (only if INFERENCE_NODE is true)
+    if [ "${INFERENCE_NODE}" = "true" ]; then
+        echo "Calling inference-up.py to load model..."
+        if [ -n "$TENSOR_PARALLEL_SIZE" ] && [ "$TENSOR_PARALLEL_SIZE" -gt 1 ]; then
+            python3 /data/compressa-tests/inference-up.py \
+                --model "$MODEL_NAME" \
+                --tensor-parallel-size "$TENSOR_PARALLEL_SIZE" \
+                --base-url "http://localhost:8080" || {
+                echo "WARNING: inference-up.py failed, but continuing..." >&2
+            }
+        else
+            python3 /data/compressa-tests/inference-up.py \
+                --model "$MODEL_NAME" \
+                --base-url "http://localhost:8080" || {
+                echo "WARNING: inference-up.py failed, but continuing..." >&2
+            }
+        fi
+    else
+        echo "INFERENCE_NODE is not 'true', skipping inference-up.py call"
+    fi
+    
+    # Wait for uvicorn (this will keep the container running)
+    echo "Uvicorn is running. Waiting for process..."
+    wait $UVICORN_PID
 fi
 
