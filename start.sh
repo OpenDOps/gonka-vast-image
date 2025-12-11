@@ -180,7 +180,7 @@ if [ "${UBUNTU_TEST}" = "true" ]; then
        -d @-
 
       # If node was already there, we update it
-      echo "${REGISTRATION_JSON}" | curl -X PUT http://${API_NODE}${REGISTRATION_ENDPOINT} \
+      echo "${REGISTRATION_JSON}" | curl -X PUT http://${API_NODE}${REGISTRATION_ENDPOINT}/${ID_PREFIX}${NODE_ID} \
        -H "Content-Type: application/json" \
        -d @-
     done
@@ -311,7 +311,7 @@ else
        -d @-
 
       # If node was already there, we update it
-      echo "${REGISTRATION_JSON}" | curl -X PUT http://${API_NODE}${REGISTRATION_ENDPOINT} \
+      echo "${REGISTRATION_JSON}" | curl -X PUT http://${API_NODE}${REGISTRATION_ENDPOINT}/${ID_PREFIX}${NODE_ID} \
        -H "Content-Type: application/json" \
        -d @-
     done
