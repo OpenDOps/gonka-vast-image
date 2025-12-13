@@ -339,7 +339,8 @@ else
     attempt=0
     while [ $attempt -lt $max_attempts ]; do
         # Try to connect to the port using curl
-        if curl -s -f http://localhost:8080/ >/dev/null 2>&1; then
+        # Accept any HTTP response (including 404) as "ready" - server is up even if endpoint doesn't exist
+        if curl -s http://localhost:8080/ >/dev/null 2>&1; then
             echo "Uvicorn is ready!"
             break
         fi
